@@ -741,62 +741,6 @@ static int verb_check(int argc, char **argv, void *userdata) {
 /* Make sure it doesn't overlap w/ errno values */
 assert_cc(UPDATE_PROGRESS_FAILED < -ERRNO_MAX);
 
-static void draw_progress_bar(const char *target, unsigned progress, size_t max_target_len, bool wide) {
-        _cleanup_free_ char *status = NULL;
-        unsigned wide_width, width, filled, i;
-        unsigned wide_75, wide_100;
-
-        assert(progress < 100); /* Once we hit 100%, we render a check instead */
-
-        if (asprintf(&status, "%u%% %s", progress, target) < 0) {
-                log_oom_debug();
-                return;
-        }
-
-        if (!colors_enabled() || columns() < 25) {
-                fputs(status, stdout);
-                return;
-        }
-
-        wide_75 = (3 * columns()) / 4;
-        wide_100 = columns() - (wide ? strlen(status) : STRLEN("XX% TOTAL")) - 1;
-        wide_width = MIN(wide_75, wide_100);
-
-        max_target_len += STRLEN("XX% ");
-        if (wide)
-                width = wide_width;
-        else if (max_target_len < wide_width)
-                width = wide_width - max_target_len - 1;
-        else
-                width = 0;
-        filled = (progress * width) / 100;
-
-        if (width < 5) {
-                fputs(status, stdout);
-                return;
-        }
-
-        for (i = 0; i < filled; i++)
-                if (i == 0)
-                        fputs(special_glyph(SPECIAL_GLYPH_PROGRESS_FILL_START), stdout);
-                else if (i == width - 1)
-                        fputs(special_glyph(SPECIAL_GLYPH_PROGRESS_FILL_END), stdout);
-                else
-                        fputs(special_glyph(SPECIAL_GLYPH_PROGRESS_FILL), stdout);
-        fputs(ansi_grey(), stdout);
-        for (; i < width; i++)
-                if (i == 0)
-                        fputs(special_glyph(SPECIAL_GLYPH_PROGRESS_EMPTY_START), stdout);
-                else if (i == width - 1)
-                        fputs(special_glyph(SPECIAL_GLYPH_PROGRESS_EMPTY_END), stdout);
-                else
-                        fputs(special_glyph(SPECIAL_GLYPH_PROGRESS_EMPTY), stdout);
-        fputs(ansi_normal(), stdout);
-
-        fputc(' ', stdout);
-        fputs(status, stdout);
-}
-
 static int update_render_progress(sd_event_source *source, void *userdata) {
         Hashmap *map = ASSERT_PTR(userdata);
         const char *target;
@@ -844,7 +788,7 @@ static int update_render_progress(sd_event_source *source, void *userdata) {
                         fprintf(stdout, "%s %s\n", GREEN_CHECK_MARK(), target);
                         total += progress;
                 } else {
-                        draw_progress_bar(target, progress, max_target_len, n == 1);
+                        draw_progress_bar(target, progress);
                         fputs("\n", stdout);
                         total += progress;
                 }
@@ -854,7 +798,7 @@ static int update_render_progress(sd_event_source *source, void *userdata) {
                 if (colors_enabled())
                         fputs(ANSI_ERASE_TO_END_OF_LINE, stdout);
                 if (!exiting) {
-                        draw_progress_bar("TOTAL", total / n, max_target_len, true);
+                        draw_progress_bar("TOTAL", total / n);
                         if (!colors_enabled())
                                 fputs("\n", stdout);
                 }
