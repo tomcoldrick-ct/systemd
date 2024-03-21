@@ -925,7 +925,7 @@ static int helper_on_notify(sd_event_source *s, int fd, uint32_t revents, void *
 
 static int run_callout(
                 const char *name,
-                const char * const cmdline[],
+                char *cmdline[],
                 struct notify_userdata *userdata) {
         _cleanup_(sd_event_unrefp) sd_event *event = NULL;
         _cleanup_(sd_event_source_unrefp) sd_event_source *exit_source = NULL, *notify_source = NULL;
