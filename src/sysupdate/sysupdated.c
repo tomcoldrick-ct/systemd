@@ -397,7 +397,7 @@ static int job_start(Job *j) {
 
         r = safe_fork_full("(sd-sysupdate)",
                            (int[]) { -EBADF, stdout_fd, STDERR_FILENO }, NULL, 0,
-                           FORK_RESET_SIGNALS|FORK_CLOSE_ALL_FDS|FORK_DEATHSIG|
+                           FORK_RESET_SIGNALS|FORK_CLOSE_ALL_FDS|FORK_DEATHSIG_SIGTERM|
                            FORK_REARRANGE_STDIO|FORK_LOG|FORK_REOPEN_LOG, &pid);
         if (r < 0)
                 return r;
@@ -547,11 +547,8 @@ static int job_method_cancel(sd_bus_message *msg, void *userdata, sd_bus_error *
 
         r = bus_verify_polkit_async(
                         msg,
-                        CAP_SYS_ADMIN,
                         action,
                         /* details= */ NULL,
-                        /* interactive= */ false,
-                        UID_INVALID,
                         &j->manager->polkit_registry,
                         error);
         if (r < 0)
@@ -734,7 +731,7 @@ static int cache_property_from_json(char **ret, const char *key, JsonVariant *js
 }
 
 static int sysupdate_run_simple(JsonVariant **ret, ...) {
-        _cleanup_close_pair_ int pipe[2] = PIPE_EBADF;
+        _cleanup_close_pair_ int pipe[2] = EBADF_PAIR;
         _cleanup_(sigkill_nowaitp) pid_t pid = 0;
         _cleanup_fclose_ FILE *f = NULL;
         _cleanup_(json_variant_unrefp) JsonVariant *v = NULL;
@@ -747,7 +744,7 @@ static int sysupdate_run_simple(JsonVariant **ret, ...) {
         r = safe_fork_full("(sd-sysupdate)",
                            (int[]) { -EBADF, pipe[1], STDERR_FILENO },
                            NULL, 0,
-                           FORK_RESET_SIGNALS|FORK_CLOSE_ALL_FDS|FORK_DEATHSIG|
+                           FORK_RESET_SIGNALS|FORK_CLOSE_ALL_FDS|FORK_DEATHSIG_SIGTERM|
                            FORK_REARRANGE_STDIO|FORK_WAIT|FORK_LOG|FORK_REOPEN_LOG,
                            &pid);
         if (r < 0)
@@ -924,11 +921,8 @@ static int target_method_list(sd_bus_message *msg, void *userdata, sd_bus_error 
 
         r = bus_verify_polkit_async(
                 msg,
-                CAP_SYS_ADMIN,
                 "org.freedesktop.sysupdate1.check",
                 details,
-                /* interactive= */ false,
-                UID_INVALID,
                 &t->manager->polkit_registry,
                 error);
         if (r < 0)
@@ -975,7 +969,7 @@ static int target_method_describe_finish(
 
         assert(json);
 
-        r = json_dispatch(json, dispatch_table, NULL, JSON_MANDATORY, NULL);
+        r = json_dispatch(json, dispatch_table, JSON_MANDATORY, NULL);
         if (r < 0)
                 return r;
 
@@ -1056,11 +1050,8 @@ static int target_method_describe(sd_bus_message *msg, void *userdata, sd_bus_er
 
         r = bus_verify_polkit_async(
                 msg,
-                CAP_SYS_ADMIN,
                 "org.freedesktop.sysupdate1.check",
                 details,
-                /* interactive= */ false,
-                UID_INVALID,
                 &t->manager->polkit_registry,
                 error);
         if (r < 0)
@@ -1121,11 +1112,8 @@ static int target_method_check_new(sd_bus_message *msg, void *userdata, sd_bus_e
 
         r = bus_verify_polkit_async(
                 msg,
-                CAP_SYS_ADMIN,
                 "org.freedesktop.sysupdate1.check",
                 details,
-                /* interactive= */ false,
-                UID_INVALID,
                 &t->manager->polkit_registry,
                 error);
         if (r < 0)
@@ -1183,11 +1171,8 @@ static int target_method_update(sd_bus_message *msg, void *userdata, sd_bus_erro
 
         r = bus_verify_polkit_async(
                 msg,
-                CAP_SYS_ADMIN,
                 action,
                 details,
-                /* interactive= */ false,
-                UID_INVALID,
                 &t->manager->polkit_registry,
                 error);
         if (r < 0)
@@ -1238,11 +1223,8 @@ static int target_method_vacuum(sd_bus_message *msg, void *userdata, sd_bus_erro
 
         r = bus_verify_polkit_async(
                 msg,
-                CAP_SYS_ADMIN,
                 "org.freedesktop.sysupdate1.vacuum",
                 details,
-                /* interactive= */ false,
-                UID_INVALID,
                 &t->manager->polkit_registry,
                 error);
         if (r < 0)
@@ -1442,8 +1424,6 @@ static Manager *manager_free(Manager *m) {
 
         hashmap_free(m->targets);
         hashmap_free(m->jobs);
-
-        bus_verify_polkit_async_registry_free(m->polkit_registry);
 
         m->bus = sd_bus_flush_close_unref(m->bus);
         sd_event_source_unref(m->notify_event);
