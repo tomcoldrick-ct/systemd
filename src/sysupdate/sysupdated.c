@@ -2,6 +2,7 @@
 
 #include "sd-bus.h"
 
+#include "build-path.h"
 #include "bus-get-properties.h"
 #include "bus-label.h"
 #include "bus-log-control-api.h"
