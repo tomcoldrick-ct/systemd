@@ -480,8 +480,8 @@ static int job_start(Job *j) {
                         log_debug("Spawning worker for job %" PRIu64 ": %s", j->id, s);
                 }
 
-                execv(sysupdate_binary_path(), (char * const *) cmd);
-                log_error_errno(errno, "Failed to execute systemd-sysupdate: %m");
+                r = invoke_callout_binary(sysupdate_binary_path(), (char *const *) cmd);
+                log_error_errno(r, "Failed to execute systemd-sysupdate: %m");
                 _exit(EXIT_FAILURE);
         }
 
@@ -785,8 +785,8 @@ static int sysupdate_run_simple(JsonVariant **ret, ...) {
                         log_debug("Spawning sysupdate: %s", s);
                 }
 
-                execv(sysupdate_binary_path(), args);
-                log_error_errno(errno, "Failed to execute systemd-sysupdate: %m");
+                r = invoke_callout_binary(sysupdate_binary_path(), args);
+                log_error_errno(r, "Failed to execute systemd-sysupdate: %m");
                 _exit(EXIT_FAILURE);
         }
 
