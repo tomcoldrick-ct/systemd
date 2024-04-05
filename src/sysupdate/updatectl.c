@@ -788,7 +788,7 @@ static int update_render_progress(sd_event_source *source, void *userdata) {
                         fprintf(stdout, "%s %s\n", GREEN_CHECK_MARK(), target);
                         total += progress;
                 } else {
-                        draw_progress_bar(target, progress);
+                        draw_progress_bar(target, progress / 100);
                         fputs("\n", stdout);
                         total += progress;
                 }
