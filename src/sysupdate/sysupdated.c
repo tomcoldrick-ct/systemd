@@ -181,7 +181,6 @@ static int job_new(JobType type, Target *t, sd_bus_message *msg, JobComplete com
                 .stdout_fd = -EBADF,
                 .complete_cb = complete_cb,
                 .dbus_msg = sd_bus_message_ref(msg),
-                .detach_cb = detach_cb,
         };
 
         if (asprintf(&j->object_path, "/org/freedesktop/sysupdate1/job/_%" PRIu64, j->id) < 0)
